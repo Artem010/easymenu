@@ -1,0 +1,2 @@
+pyTelegramBotAPI==3.7.5
+psycopg2==2.8.6
