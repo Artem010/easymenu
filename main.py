@@ -37,6 +37,8 @@ def addDescForNewRecipe(message):
         keyboardTEMP.row(kb.done)
         bot.send_message(chat_id=message.from_user.id, text='Выберите продукты, которые необходимы для этого блюда и затем нажмите ГОТОВО:', reply_markup=keyboardTEMP)
     else:
+        if message.from_user.id in USER_STATUS:
+            del USER_STATUS[message.from_user.id]
         bot.send_message(chat_id=message.chat.id, text="Вы в меню", reply_markup=kb.keyboardMain)
 def addRecipe(message):
     if(message.text != '◀️ Назад'):
@@ -62,6 +64,8 @@ def addRecipe(message):
         except:
             bot.send_message(message.from_user.id, f"Неправильный формат записи, попробуйте ещё раз! ", reply_markup=kb.keyboardUser)
     else:
+        if message.from_user.id in USER_STATUS:
+            del USER_STATUS[message.from_user.id]
         bot.send_message(chat_id=message.chat.id, text="Вы в меню", reply_markup=kb.keyboardMain)
 
 def delRecipe(message):
@@ -72,6 +76,8 @@ def delRecipe(message):
         else:
             bot.send_message(chat_id=message.chat.id, text=f"*{message.text}* такого рецепта не существует!", parse_mode='Markdown', reply_markup=kb.keyboardMain)
     else:
+        if message.from_user.id in USER_STATUS:
+            del USER_STATUS[message.from_user.id]
         bot.send_message(chat_id=message.chat.id, text="Вы в главном меню", reply_markup=kb.keyboardMain)
 
 
@@ -85,18 +91,20 @@ def delRecipe_handler(message):
     msg = bot.send_message(message.from_user.id, f"Введите название блюда, которое хотите удалить")
     bot.register_next_step_handler(msg, delRecipe)
 
-@bot.message_handler(commands=['start', 'go'])
+@bot.message_handler(commands=['start'])
 def start_handler(message):
     userInfo = message.from_user
     r = dbRequests.addUserDB(userInfo.id, userInfo.first_name)
     if(r):
-        bot.send_message(message.chat.id, '*Привет '+message.from_user.first_name + '!* Добро пожаловать в бота',  parse_mode= "Markdown", reply_markup=kb.keyboardMain)
-        # bot.send_message(message.chat.id, '*Чтобы добавить фильм в список просмотренных:*\n1) нажать "Добавить фильм" \n2) ввести название\n3) поставить оценку\n4) добавить комментарий (необязательно)',  parse_mode= "Markdown", reply_markup=kb.keyboardMain)
+        bot.send_message(message.chat.id, f"""*Привет {message.from_user.first_name}!* Добавь продукты, чтобы я смог подобрать для тебя рецепт. 
+Для этого нажми _«Добавить продукт»_ ниже и выбери ингредиенты из списка, а затем нажми _«Подобрать рецепт»_👇🏻
 
-        # bot.send_message(
-        #     chat_id=config.ADMIN_CHAT_ID,
-        #     text=f"Присоеденился новый пользователь {userInfo.first_name} {userInfo.last_name}.",
-        # )
+п.с. Для супер быстрого поиска можешь просто нажать «СЛУЧАЙНЫЙ РЕЦЕПТ» и я пришлю тебе что-нибудь на свой вкус😋""",  parse_mode= "Markdown", reply_markup=kb.keyboardMain)
+
+        bot.send_message(
+            chat_id=config.ADMIN_CHAT_ID,
+            text=f"Присоеденился новый пользователь {userInfo.first_name} | {userInfo.id}.",
+        )
     else:
         bot.send_message(chat_id = message.chat.id, text="Вы в главном меню!", reply_markup=kb.keyboardMain)
 
@@ -107,13 +115,14 @@ def get_text_message(message):
         ingredients = dbRequests.getUserIngredients(userId);
         list = ""
         if len(ingredients) > 0:
-            # keyboardIngTEMP = types.InlineKeyboardMarkup(row_width=2)
             for row in ingredients:
                 list += f"{row[1].title()}\n"
-                # keyboardIngTEMP.row(types.InlineKeyboardButton(text=row[1].title(), callback_data=row[0]))
             bot.send_message(userId, f"*Ваш список продуктов:*\n{list}", parse_mode="Markdown", reply_markup=kb.keyboardUser)
         else:
-            bot.send_message(userId, "У вас ещё нет продуктов, нажмите 'Добавить продукт', чтобы добавить!", parse_mode="Markdown",reply_markup=kb.keyboardUser)
+            bot.send_message(userId, """Добавь продукты, чтобы я смог подобрать для тебя рецепт. 
+Для этого нажми _«Добавить продукт»_ ниже и выбери ингредиенты из списка, а затем нажми _«Подобрать рецепт»_👇🏻
+
+п.с. Для супер быстрого поиска можешь просто нажать «СЛУЧАЙНЫЙ РЕЦЕПТ» и я пришлю тебе что-нибудь на свой вкус😋""", parse_mode="Markdown",reply_markup=kb.keyboardUser)
     elif(message.text == 'Подобрать рецепты'):
         records = dbRequests.getUserIngredients(userId);
         listId = ''
@@ -123,32 +132,44 @@ def get_text_message(message):
                 listId+=','
         print(listId)
         resultRecipesId = dbRequests.getRecipeForIngredients(listId)
+        print("resultRecipesId = ")
+        print(resultRecipesId)
+        if(len(resultRecipesId) > 0):
+            keyboardTEMP = types.InlineKeyboardMarkup(row_width=2)
+            userInfo[userId] = {'recipes': []}
+            userInfo[userId]['recipes'] = {'1': []}
+            userInfo[userId]['page'] = 1
+            print(userInfo)
 
-        keyboardTEMP = types.InlineKeyboardMarkup(row_width=2)
-        userInfo[userId] = {'recipes': []}
-        userInfo[userId]['recipes'] = {'1': []}
-        userInfo[userId]['page'] = 1
-        print(userInfo)
+            countOnpage = 10
+            j=1
 
-        countOnpage = 10
-        j=1
+            for i, r in enumerate(resultRecipesId):
+                if i == j*countOnpage:
+                    j += 1
+                    userInfo[userId]['recipes'][str(j)] = []
 
-        for i, r in enumerate(resultRecipesId):
-            if i == j*countOnpage:
-                j += 1
-                userInfo[userId]['recipes'][str(j)] = []
+                userInfo[userId]['recipes'][str(j)].append({'id':r[0], 'title':r[1]})
+                if i < countOnpage:
+                    keyboardTEMP.add(types.InlineKeyboardButton(text=r[1], callback_data=r[0]))
+            pages = round(len(resultRecipesId)/countOnpage)
+            userInfo[userId]['maxPage'] = pages
+            print(userInfo)
+            if pages == 0: pages=1
+            keyboardTEMP.row(kb.left, types.InlineKeyboardButton(text=f"1/{str(pages)}", callback_data='center'), kb.right)
+            keyboardTEMP.row(kb.back)
+            USER_STATUS[userId] = 'choosing_recipe'
+            bot.send_message(userId, f"Вот, что я подобрал для тебя. Выбери любой рецепт из списка и я пришлю рецепт😋", parse_mode="Markdown", reply_markup=keyboardTEMP)
+        else:
+            bot.send_message(userId, f"""Извини, но кажется ты забыл добавить продукты или мне слишком мало информации😢
 
-            userInfo[userId]['recipes'][str(j)].append({'id':r[0], 'title':r[1]})
-            if i < countOnpage:
-                keyboardTEMP.add(types.InlineKeyboardButton(text=r[1], callback_data=r[0]))
-        pages = round(len(resultRecipesId)/countOnpage)
-        userInfo[userId]['maxPage'] = pages
-        print(userInfo)
-        if pages == 0: pages=1
-        keyboardTEMP.row(kb.left, types.InlineKeyboardButton(text=f"1/{str(pages)}", callback_data='center'), kb.right)
-        keyboardTEMP.row(kb.back)
-        USER_STATUS[userId] = 'choosing_recipe'
-        bot.send_message(userId, f"Доступные блюда:", parse_mode="Markdown", reply_markup=keyboardTEMP)
+Повтори эти шаги и я попробую найти для тебя рецепт:
+1) Нажми _«Мои продукты»_ ниже
+2) Выбери _«Добавить продукт»_
+3) Выбери ингредиенты из списка и нажми кнопку _«☑️Назад»_
+4) Осталось выбрать _«Подобрать рецепт»_
+
+п.с. Для супер быстрого поиска можешь просто нажать _«Случайный рецепт»_ и я пришлю тебе что-нибудь на свой вкус😋""", parse_mode="Markdown", reply_markup=kb.keyboardMain)
     elif (message.text == 'Случайный рецепт'):
         r = dbRequests.getRandomRecipe()
         bot.send_message(userId, f"*{r[1]} ({r[3]})*\n\n{r[2]}\n{r[4]}", parse_mode="Markdown",reply_markup=kb.keyboardMain)
@@ -172,14 +193,21 @@ def get_text_message(message):
 
             bot.send_message(userId, "Нажмите на продукт, чтобы удалить:", parse_mode="Markdown", reply_markup=keyboardTEMP)
         else:
-            bot.send_message(userId, "У вас ещё нет продуктов, нажмите 'Добавить продукт', чтобы добавить!", parse_mode="Markdown",reply_markup=kb.keyboardUser)
+            bot.send_message(userId, "У вас ещё нет продуктов, нажмите _«Добавить продукт»_, чтобы добавить!", parse_mode="Markdown",reply_markup=kb.keyboardUser)
     elif (message.text == '◀️ Назад'):
         bot.send_message(chat_id=message.chat.id, text="Вы в главном меню!", reply_markup=kb.keyboardMain)
         if (userId in userInfo):
             del userInfo[userId]
             print(userInfo)
-    elif (message.text == 'Тех.Поддержка'): bot.send_message(userId, f"Если у вас имеется какой-то вопрос или вы сталкнулись с ошибкой, напишите *@bloodymondayy*", parse_mode="Markdown", reply_markup=kb.keyboardMain)
-    elif (message.text == 'Инструкция'): bot.send_message(userId, f"Инструкция по использованию бота", parse_mode="Markdown", reply_markup=kb.keyboardMain)
+    elif (message.text == 'Тех.Поддержка'): bot.send_message(userId, f"Если ты нашёл ошибки или у тебя есть вопросы/предложения, просто [напиши сюда](https://t.me/bloodymondayy) 😉", parse_mode="MarkdownV2", reply_markup=kb.keyboardMain, disable_web_page_preview=True)
+    elif (message.text == 'Донаты'): bot.send_message(userId,"""Этот проект только запустился, и ты можешь поддержать авторов, чтобы в дальнейшем видеть крутые улучшения ✅
+
+Если хочешь, поддержи проект рублем [здесь](https://yoomoney.ru/to/4100117581976152)👈🏼""", parse_mode="MarkdownV2", reply_markup=kb.keyboardMain, disable_web_page_preview=True)
+    elif (message.text == 'Инструкция'): bot.send_message(userId, f"""Всё очень просто! Для поиска рецептов есть всего 3 кнопки внизу: _«Подобрать рецепт»_, _«Мои рецепты»_ и _«Случайный рецепт»_:
+
+☑️_«Подобрать рецепт»_ - при помощи этой кнопки бот Easy menu пришлёт тебе рецепт на основе продуктов, которые хранятся у тебя в _«Мои рецепты»_
+☑️_«Мои рецепты»_ - при помощи этой кнопки ты можешь добавить продукты из списка или удалить уже не актуальные ингредиенты. После того, как выберешь все нужные продукты и удалишь ненужные, просто нажми _«◀️ Назад»_ и _«Подобрать рецепт»_
+☑️_«Случайный рецепт»_ - используй эту кнопку, чтобы быстро получить случайный рецепт от бота""", parse_mode="Markdown", reply_markup=kb.keyboardMain)
     print(USER_STATUS)
 
 

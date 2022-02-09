@@ -2,7 +2,7 @@ from telebot import types
 
 keyboardMain = types.ReplyKeyboardMarkup(True)
 keyboardMain.row("Подобрать рецепты",'Мои продукты','Случайный рецепт')
-keyboardMain.row('Инструкция', 'Тех.Поддержка')
+keyboardMain.row('Инструкция', 'Тех.Поддержка', 'Донаты')
 
 keyboardUser = types.ReplyKeyboardMarkup(True)
 keyboardUser.row("Добавить продукт", 'Мои продукты','Удалить продукт')
