@@ -103,7 +103,8 @@ def start_handler(message):
 
         bot.send_message(
             chat_id=config.ADMIN_CHAT_ID,
-            text=f"Присоеденился новый пользователь {userInfo.first_name} | {userInfo.id}.",
+            text=f"Присоеденился новый пользователь *{userInfo.first_name} | {userInfo.id}*.",
+            parse_mode= "Markdown"
         )
     else:
         bot.send_message(chat_id = message.chat.id, text="Вы в главном меню!", reply_markup=kb.keyboardMain)
