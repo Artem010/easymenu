@@ -131,10 +131,10 @@ def get_text_message(message):
             listId += str(row[0])
             if i != (len(records)-1):
                 listId+=','
-        print(listId)
+        #print(listId)
         resultRecipesId = dbRequests.getRecipeForIngredients(listId)
-        print("resultRecipesId = ")
-        print(resultRecipesId)
+        #print("resultRecipesId = ")
+        #print(resultRecipesId)
         if(len(resultRecipesId) > 0):
             keyboardTEMP = types.InlineKeyboardMarkup(row_width=2)
             userInfo[userId] = {'recipes': []}
@@ -155,7 +155,7 @@ def get_text_message(message):
                     keyboardTEMP.add(types.InlineKeyboardButton(text=r[1], callback_data=r[0]))
             pages = round(len(resultRecipesId)/countOnpage)
             userInfo[userId]['maxPage'] = pages
-            print(userInfo)
+            #print(userInfo)
             if pages == 0: pages=1
             keyboardTEMP.row(kb.left, types.InlineKeyboardButton(text=f"1/{str(pages)}", callback_data='center'), kb.right)
             keyboardTEMP.row(kb.back)
@@ -199,7 +199,7 @@ def get_text_message(message):
         bot.send_message(chat_id=message.chat.id, text="Вы в главном меню!", reply_markup=kb.keyboardMain)
         if (userId in userInfo):
             del userInfo[userId]
-            print(userInfo)
+            #print(userInfo)
     elif (message.text == 'Тех.Поддержка'): bot.send_message(userId, f"Если ты нашёл ошибки или у тебя есть вопросы/предложения, просто [напиши сюда](https://t.me/bloodymondayy) 😉", parse_mode="MarkdownV2", reply_markup=kb.keyboardMain, disable_web_page_preview=True)
     elif (message.text == 'Донаты'): bot.send_message(userId,"""Этот проект только запустился, и ты можешь поддержать авторов, чтобы в дальнейшем видеть крутые улучшения ✅
 
@@ -207,9 +207,9 @@ def get_text_message(message):
     elif (message.text == 'Инструкция'): bot.send_message(userId, f"""Всё очень просто! Для поиска рецептов есть всего 3 кнопки внизу: _«Подобрать рецепт»_, _«Мои рецепты»_ и _«Случайный рецепт»_:
 
 ☑️_«Подобрать рецепт»_ - при помощи этой кнопки бот Easy menu пришлёт тебе рецепт на основе продуктов, которые хранятся у тебя в _«Мои рецепты»_
-☑️_«Мои рецепты»_ - при помощи этой кнопки ты можешь добавить продукты из списка или удалить уже не актуальные ингредиенты. После того, как выберешь все нужные продукты и удалишь ненужные, просто нажми _«◀️ Назад»_ и _«Подобрать рецепт»_
+☑️_«Мои продукты»_ - при помощи этой кнопки ты можешь добавить продукты из списка или удалить уже не актуальные ингредиенты. После того, как выберешь все нужные продукты и удалишь ненужные, просто нажми _«◀️ Назад»_ и _«Подобрать рецепт»_
 ☑️_«Случайный рецепт»_ - используй эту кнопку, чтобы быстро получить случайный рецепт от бота""", parse_mode="Markdown", reply_markup=kb.keyboardMain)
-    print(USER_STATUS)
+    #print(USER_STATUS)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -306,7 +306,7 @@ def callback_worker(call):
                 bot.edit_message_text(chat_id=userId, message_id=call.message.message_id, text='Доступные блюда:',
                                       reply_markup=keyboardTEMP)
         else:
-            print(userInfo[userId]['recipes'][str(userInfo[userId]['page'])])
+            #print(userInfo[userId]['recipes'][str(userInfo[userId]['page'])])
             for item in userInfo[userId]['recipes'][str(userInfo[userId]['page'])]:
                 if (int(call.data) == item['id']):
                     r = dbRequests.getRecipe(int(item['id']))
